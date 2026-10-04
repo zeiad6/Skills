@@ -91,6 +91,12 @@ node scripts/render.mjs story.voiced.json out/video.mp4
 | `ar-male-classic` | Piper `ar_JO-kareem-medium` | male, more permissive licence, flatter |
 | `en-female` / `en-female-hq` / `en-male` | Piper `en_US-amy` / `en_US-lessac` / `en_US-ryan` | English |
 
+**Fish Audio (cloud, any voice the user picks on fish.audio):** `--voice fish:<modelId>[:female|male]`
+(the id is the `modelId=` in the fish.audio URL). Needs `FISH_API_KEY` set as an environment variable
+in the environment settings (never in chat, files or commits) and `api.fish.audio` allowed in the
+environment's network access. Optional `FISH_MODEL` (default `s1`). Works for both `tts.py` and
+`localize.py finish --voice fish:<id>`. Only use voices the user owns or has rights/consent for.
+
 Tell the user about the non-commercial licence when they plan to monetise; offer `ar-male-classic`.
 How it stays smooth (don't undo this): caption fragments are joined into **sentences** before
 synthesis (a line ending in a comma continues into the next), Arabic is **auto-diacritized**

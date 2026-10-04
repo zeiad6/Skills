@@ -78,6 +78,17 @@ def sentences(lines):
 class Voice:
     def __init__(self, name=DEFAULT_VOICE, speed=1.0, threads=4):
         _ensure_deps()
+        self.engine = "piper"
+        if name.startswith("fish:"):
+            # Fish Audio cloud voice: "fish:<modelId>" or "fish:<modelId>:female|male"
+            parts = name.split(":")
+            self.engine, self.name, self.ref = "fish", name, parts[1]
+            self.gender = parts[2] if len(parts) > 2 else "female"
+            self.key = os.environ.get("FISH_API_KEY")
+            if not self.key:
+                sys.exit("FISH_API_KEY is not set — add it as an environment variable (never commit it)")
+            self.speed, self.sr, self.arabic, self.diacritize = speed, 44100, False, None
+            return
         import sherpa_onnx
         model_id = VOICES.get(name, (name,))[0]
         self.name, self.gender = name, VOICES.get(name, (None, "male"))[1]
@@ -115,8 +126,26 @@ class Voice:
         t = speakable_ar(text, extra)
         return self.diacritize.diacritize(t) if self.diacritize else t
 
+    def _fish(self, text):
+        # Fish Audio REST API: POST /v1/tts → audio bytes. Requires api.fish.audio in the network allowlist.
+        import io, numpy as np, soundfile as sf
+        body = json.dumps({"text": text.replace("\u200f", ""), "reference_id": self.ref, "format": "wav",
+                           "normalize": True, "latency": "normal",
+                           "prosody": {"speed": self.speed, "volume": 0}}).encode()
+        req = urllib.request.Request("https://api.fish.audio/v1/tts", data=body, method="POST", headers={
+            "Authorization": f"Bearer {self.key}", "Content-Type": "application/json",
+            "model": os.environ.get("FISH_MODEL", "s1")})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            x, sr = sf.read(io.BytesIO(r.read()), dtype="float32")
+        if x.ndim > 1:
+            x = x.mean(axis=1)
+        self.sr = sr
+        return trim(x, sr)
+
     def _synth(self, text, extra=None):
         import numpy as np
+        if self.engine == "fish":
+            return self._fish(text)
         a = self.tts.generate(self.prepare(text, extra), sid=0, speed=self.speed)
         return trim(np.array(a.samples, dtype="float32"), self.sr)
 
@@ -167,7 +196,7 @@ def master(in_wav, out_wav):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("storyboard")
-    ap.add_argument("--voice", default=DEFAULT_VOICE, help=", ".join(VOICES))
+    ap.add_argument("--voice", default=DEFAULT_VOICE, help=", ".join(VOICES) + ", or fish:<modelId>[:female|male]")
     ap.add_argument("--speed", type=float, default=1.0)
     ap.add_argument("--out-dir", default="voice")
     a = ap.parse_args()
