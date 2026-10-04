@@ -1,5 +1,5 @@
 {
-  "meta": { "lang": "ar", "dir": "rtl", "fps": 30, "width": 1080, "handle": "@promptforge", "accent": "#4ade80" },
+  "meta": { "background": ["aurora", "code"], "lang": "ar", "dir": "rtl", "fps": 30, "width": 1080, "handle": "@promptforge", "accent": "#4ade80" },
   "audio": null,
   "pipeline": {
     "groups": [

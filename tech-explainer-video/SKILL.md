@@ -49,6 +49,15 @@ Bundled fonts: Cairo (Arabic + Latin) and JetBrains Mono, under OFL (`assets/fon
    | `bullets` | recap |
    | `html` | anything custom (raw HTML string, positioned in the content box) |
 
+   **Background** (`meta.background`, or per scene `background`): animated, low-contrast layers
+   that make the video distinctive without hurting readability. A name or an array layered
+   bottom→top: `aurora` (drifting colour glows), `network` (nodes + links with data pulses —
+   cloud/infra), `grid` (perspective floor rushing forward — speed/pipelines), `code` (falling code
+   glyphs — programming), `stars` (particles), `plain`. Good pairs: `["aurora","network"]` for
+   infra, `["aurora","code"]` for programming, `["aurora","grid"]` for CI/CD. Colours follow
+   `meta.accent` (override `meta.bgAccent`; aurora colours via `meta.bgOptions.colors`, strength
+   via `meta.bgOptions.glow`). Cards are translucent so the background shows through.
+
    The optional top `pipeline` bar is the video's spine: define its steps once, then each scene
    sets `pipeline: {done, current, fail}` so viewers always see where they are.
 3. **Validate** — prints the computed timeline and warns about long captions, overlong scenes,

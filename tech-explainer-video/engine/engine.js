@@ -288,7 +288,9 @@
       ? { x: side === 'left' ? 330 : 40, y: s.top || 400, w: 710, h: 980 }
       : { x: 60, y: s.top || 400, w: 960, h: 980 });
 
-    let h = '';
+    let h = window.backgroundHTML
+      ? backgroundHTML(s.background || SB.meta?.background || 'plain', t, SB.meta?.bgAccent || SB.meta?.accent, SB.meta?.bgOptions)
+      : '';
     if (SB.pipeline && s.pipeline !== false && s.pipeline) h += pipelineBar(s.pipeline, lt);
     if (s.eyebrow && s.type !== 'title') h += `<div class="abs h-eyebrow" style="left:60px;right:60px;top:${box.y - 70}px;text-align:center;${appear(lt, 0)}">${esc(s.eyebrow)}</div>`;
 

@@ -1,8 +1,8 @@
 /* Design tokens — dark "engineering terminal" look. Base canvas is 1080x1920 (9:16). */
 :root {
   --bg: #050607;
-  --panel: #0d1013;
-  --panel-2: #12161a;
+  --panel: rgba(13, 16, 19, .72);      /* translucent so the animated background shows through */
+  --panel-2: rgba(18, 22, 26, .8);
   --line: #1f252c;
   --line-2: #2a323b;
   --text: #f2f4f6;
@@ -19,18 +19,15 @@
 #stage {
   position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0;
   font-family: Cairo, "DejaVu Sans", sans-serif; color: var(--text); overflow: hidden;
-  background:
-    radial-gradient(ellipse 70% 40% at 50% 42%, rgba(74, 222, 128, .05), transparent 70%),
-    radial-gradient(circle at 1px 1px, rgba(255,255,255,.035) 1.5px, transparent 0) 0 0 / 36px 36px,
-    var(--bg);
+  background: var(--bg);   /* animated layers come from backgrounds.js (meta.background) */
 }
 .abs { position: absolute; }
 .mono { font-family: JBMono, "DejaVu Sans Mono", monospace; direction: ltr; unicode-bidi: isolate; }
 
 /* ---------- pipeline bar ---------- */
-.pipe { left: 40px; right: 40px; top: 190px; height: 128px; border: 2px solid var(--line); border-radius: 22px; background: rgba(13,16,19,.9); }
+.pipe { left: 40px; right: 40px; top: 190px; height: 128px; border: 2px solid var(--line); border-radius: 22px; background: rgba(13,16,19,.8); }
 .pipe .grp { position: absolute; top: 14px; height: 22px; border: 2px solid var(--line-2); border-bottom: 0; border-radius: 4px 4px 0 0; }
-.pipe .grp b { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 0 12px; font: 700 26px Cairo; color: var(--muted); letter-spacing: 4px; }
+.pipe .grp b { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: #0d1013; padding: 0 12px; font: 700 26px Cairo; color: var(--muted); letter-spacing: 4px; }
 .pipe .seg { position: absolute; top: 56px; height: 4px; border-radius: 2px; background: var(--line-2); }
 .pipe .dot { position: absolute; top: 44px; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; border: 3px solid var(--dim); background: var(--bg); box-sizing: border-box; }
 .pipe .dot.done { border-color: var(--green); box-shadow: 0 0 14px rgba(74,222,128,.5); }
@@ -43,7 +40,7 @@
 .pipe .lbl.bad { color: var(--red); }
 
 /* ---------- generic panels ---------- */
-.card { background: var(--panel); border: 2px solid var(--line); border-radius: 26px; box-sizing: border-box; }
+.card { background: var(--panel); border: 2px solid var(--line); border-radius: 26px; box-sizing: border-box; box-shadow: 0 18px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04); }
 .h-eyebrow { font: 700 24px Cairo; color: var(--muted); letter-spacing: 3px; }
 .h-big { font: 800 64px/1.15 Cairo; }
 .h-mid { font: 800 46px/1.2 Cairo; }

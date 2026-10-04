@@ -1,5 +1,5 @@
 {
-  "meta": { "lang": "ar", "fps": 30, "width": 1080, "handle": "@promptforge", "accent": "#4ade80" },
+  "meta": { "background": ["aurora", "network"], "lang": "ar", "fps": 30, "width": 1080, "handle": "@promptforge", "accent": "#4ade80" },
   "pipeline": {
     "groups": [
       { "label": "DECLARE", "steps": ["IMAGE", "YAML", "APPLY"] },
