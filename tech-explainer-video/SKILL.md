@@ -107,6 +107,16 @@ fades, pauses are uniform (0.32 s between sentences), and the track is compresse
 - `meta.presenter` is set automatically: **`nova`** (original female engineer robot: headset,
   glowing visor, light-trail ponytail) for female voices, **`forge`** (hard-hat robot) for male.
   Override with `"presenter": "forge"|"nova"`, colour via `meta.presenterAccent`.
+- **Listen-back QA (on by default):** every sentence is transcribed back with Whisper; if words are
+  dropped, repeated or slurred it is re-synthesized (up to 3 tries) and the best take is kept.
+  Sentences still scoring < 0.75 are printed — rephrase them (shorter, simpler words). `--no-qa`
+  skips it. Voice noise is lowered (0.45/0.6) for steadier delivery; avoid `--speed` above ~1.1,
+  shorten text instead.
+- **Tech terms stay recognisable:** the sentence is never split to insert English audio (that would
+  sound choppy). Instead each term uses the Arabic spelling that an English recognizer hears as the
+  original word (`SPOKEN_AR`). For a new term, find the best spelling with
+  `python3 scripts/tts.py x.json --tune-terms '{"Terraform": ["تيرافورم", "تيرَفورْم"]}'` and add it.
+  Subtitles always keep the English term.
 - The presenter's mouth follows the real voice loudness (render.mjs passes an envelope).
 - English tech terms are transliterated for speech only (`SPOKEN_AR` in `tts.py`; per-video
   `meta.spoken: {"Helm": "هِلم"}`, or `"speak"` on a line). Add every new Latin term the script uses.

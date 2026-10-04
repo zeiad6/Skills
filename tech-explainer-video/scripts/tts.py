@@ -34,15 +34,19 @@ DEFAULT_VOICE = "ar-female"
 PAUSE = {",": 0.16, ".": 0.32}     # seconds of silence after a clause / sentence
 
 # Spoken forms for Latin tech terms inside Arabic (speech only — captions keep the original).
+# Spellings were picked by an ASR back-check (scripts/tts.py --tune-terms): each candidate is
+# synthesized and the one an English recognizer hears as the original term wins.
 SPOKEN_AR = {
     "CI/CD": "سي آي سي دي", "CICD": "سي آي سي دي", "CI": "سي آي", "CD": "سي دي",
-    "Kubernetes": "كوبرنيتِس", "K8s": "كيه إيتس", "Docker Hub": "دوكر هَب", "Dockerfile": "دوكر فايل",
-    "Docker": "دوكر", "GitHub Actions": "جِت هَب أكشنز", "GitHub": "جِت هَب", "Git": "جِت", "YAML": "يامل",
-    "API": "إيه بي آي", "Pods": "بودز", "Pod": "بود", "Deployment": "ديبلويمنت", "Service": "سيرفس",
-    "Node": "نود", "Cluster": "كلاستر", "Control Plane": "كنترول بلين", "Image": "إيميج",
-    "Container": "كونتينر", "SSH": "إس إس إتش", "Staging": "ستيجنج", "Rolling": "رولينج",
-    "Blue-Green": "بلو جرين", "Canary": "كناري", "linter": "لينتر", "push": "بوش", "Python": "بايثون",
-    "Linux": "لينكس", "AWS": "إيه دبليو إس", "React": "رياكت", "JavaScript": "جافاسكربت", "SQL": "سيكوال",
+    "Kubernetes": "كوبَرنيتيس", "K8s": "كيه إيتس", "Docker Hub": "دوكيرْ هَبْ", "Dockerfile": "دوكيرْ فايل",
+    "Docker": "دوكيرْ", "GitHub Actions": "غِت هاب آكْشَنْز", "GitHub": "غِت هاب", "Git": "غِت", "YAML": "يامُّلْ",
+    "API": "إيه بي آي", "Pods": "پودْز", "Pod": "پودّ", "Deployment": "ديبْلوي مَنْت", "Service": "سيرفِس",
+    "Node": "نَوْدْ", "Nodes": "نَوْدْز", "Cluster": "كْلَسْتَرْ", "Control Plane": "كَنْتْرول پْلَيْن", "Image": "إيمِج",
+    "Container": "كونْتَيْنَر", "Containers": "كونْتَيْنَرز", "SSH": "إس إس إتش", "Staging": "ستَيْجِنْغ",
+    "Rolling": "رولينغ", "Blue-Green": "بْلو غْرين", "Canary": "كِنَيْري", "linter": "لينتِر", "Linter": "لينتِر",
+    "Actions": "آكْشَنْز", "Image Registry": "إيمِج رِجِسْتْري", "Registry": "رِجِسْتْري", "Pipeline": "پايپلاين",
+    "push": "پوش", "Python": "پايثون", "Linux": "لينكس", "AWS": "إيه دبليو إس", "React": "رياكت",
+    "JavaScript": "جافاسكْرِبْت", "SQL": "سيكوال", "Scheduler": "سْكيدْجولَر", "Load Balancer": "لود بالانْسَر",
 }
 AR_DIGITS = {0: "صفر", 1: "واحد", 2: "اثنان", 3: "ثلاثة", 4: "أربعة", 5: "خمسة", 6: "ستة", 7: "سبعة", 8: "ثمانية",
              9: "تسعة", 10: "عشرة", 20: "عشرين", 25: "خمسة وعشرين", 50: "خمسين", 100: "مئة", 1000: "ألف"}
@@ -75,10 +79,54 @@ def sentences(lines):
     return groups
 
 
+_ASR = {}
+
+
+def _asr(x, sr, lang):
+    """Transcribe a clip with the cached multilingual Whisper (used for QA and term tuning)."""
+    import numpy as np, sherpa_onnx
+    if lang not in _ASR:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from localize import fetch_model
+        d, _ = fetch_model("small")
+        p = lambda s: os.path.join(d, f"small-{s}")
+        pick = lambda s: p(s.replace(".onnx", ".int8.onnx")) if os.path.exists(p(s.replace(".onnx", ".int8.onnx"))) else p(s)
+        _ASR[lang] = sherpa_onnx.OfflineRecognizer.from_whisper(encoder=pick("encoder.onnx"), decoder=pick("decoder.onnx"),
+                                                                tokens=p("tokens.txt"), language=lang, task="transcribe", num_threads=4)
+    n = int(len(x) * 16000 / sr)
+    y = np.interp(np.linspace(0, len(x) - 1, n), np.arange(len(x)), x).astype(np.float32)
+    st = _ASR[lang].create_stream(); st.accept_waveform(16000, y); _ASR[lang].decode_stream(st)
+    return st.result.text.strip()
+
+
+def _norm_ar(t):
+    t = re.sub(r"[\u064B-\u0652\u0670\u0640]", "", t)               # diacritics, tatweel
+    t = re.sub("[إأآا]", "ا", t).replace("ى", "ي").replace("ة", "ه").replace("پ", "ب").replace("گ", "ك")
+    return re.sub(r"[^\u0621-\u064A]", "", t)
+
+
+def tune_terms(voice, terms, tries=2):
+    """For each {term: [candidate spellings]}, return the spelling Whisper-en hears as the term."""
+    import difflib
+    out = {}
+    for term, cands in terms.items():
+        scored = []
+        for c in cands:
+            best = 0
+            for _ in range(tries):
+                x = voice._synth(c)
+                h = _asr(x, voice.sr, "en")
+                best = max(best, difflib.SequenceMatcher(None, re.sub("[^a-z]", "", term.lower()), re.sub("[^a-z]", "", h.lower())).ratio())
+            scored.append((best, c))
+        out[term] = max(scored)[1]
+        print(f"{term}: {max(scored)[1]}  ({max(scored)[0]:.2f})", file=sys.stderr)
+    return out
+
+
 class Voice:
-    def __init__(self, name=DEFAULT_VOICE, speed=1.0, threads=4):
+    def __init__(self, name=DEFAULT_VOICE, speed=1.0, threads=4, qa=True):
         _ensure_deps()
-        self.engine = "piper"
+        self.engine, self.qa, self.qa_log = "piper", qa, []
         if name.startswith("fish:"):
             # Fish Audio cloud voice: "fish:<modelId>" or "fish:<modelId>:female|male"
             parts = name.split(":")
@@ -87,7 +135,7 @@ class Voice:
             self.key = os.environ.get("FISH_API_KEY")
             if not self.key:
                 sys.exit("FISH_API_KEY is not set — add it as an environment variable (never commit it)")
-            self.speed, self.sr, self.arabic, self.diacritize = speed, 44100, False, None
+            self.speed, self.sr, self.arabic, self.diacritize, self.qa = speed, 44100, False, None, False
             return
         import sherpa_onnx
         model_id = VOICES.get(name, (name,))[0]
@@ -115,7 +163,7 @@ class Voice:
         cfg = sherpa_onnx.OfflineTtsConfig(model=sherpa_onnx.OfflineTtsModelConfig(
             vits=sherpa_onnx.OfflineTtsVitsModelConfig(
                 model=os.path.join(d, onnx), tokens=os.path.join(d, "tokens.txt"),
-                data_dir=os.path.join(d, "espeak-ng-data"), noise_scale=0.6, noise_scale_w=0.7),
+                data_dir=os.path.join(d, "espeak-ng-data"), noise_scale=0.45, noise_scale_w=0.6),
             num_threads=threads))
         self.tts, self.speed = sherpa_onnx.OfflineTts(cfg), speed
         self.sr = self.tts.sample_rate
@@ -149,6 +197,29 @@ class Voice:
         a = self.tts.generate(self.prepare(text, extra), sid=0, speed=self.speed)
         return trim(np.array(a.samples, dtype="float32"), self.sr)
 
+    def _synth_checked(self, text, extra=None, tries=3):
+        """Synthesize, then listen back with Whisper: retry when words are dropped, repeated or slurred
+        (VITS samples noise, so each try differs). Keeps the attempt that best matches the text."""
+        if not self.qa:
+            return self._synth(text, extra)
+        best, best_score = None, -1
+        expect = _norm_ar(self.prepare(text, extra)) if self.arabic else text.lower()
+        for _ in range(tries):
+            x = self._synth(text, extra)
+            heard = _asr(x, self.sr, "ar" if self.arabic else "en")
+            got = _norm_ar(heard) if self.arabic else heard.lower()
+            import difflib
+            score = difflib.SequenceMatcher(None, expect, got).ratio()
+            rate = len(expect) / max(0.3, len(x) / self.sr)             # stutters stretch the clip
+            if rate < 6:
+                score -= 0.15
+            if score > best_score:
+                best, best_score = x, score
+            if score >= 0.88:
+                break
+        self.qa_log.append((round(best_score, 2), text))
+        return best
+
     def say(self, text, extra=None):
         return self._synth(text, extra), self.sr
 
@@ -158,7 +229,7 @@ class Voice:
         out, spans, t = [], [None] * len(lines), 0.0
         groups = sentences(lines)
         for gi, g in enumerate(groups):
-            x = self._synth(" ".join(lines[i].strip() for i in g), extra)
+            x = self._synth_checked(" ".join(lines[i].strip() for i in g), extra)
             dur = len(x) / self.sr
             # split the sentence's audio among its lines by (spoken) length
             w = [max(1, len(self.prepare(lines[i], extra))) for i in g]
@@ -199,12 +270,16 @@ def main():
     ap.add_argument("--voice", default=DEFAULT_VOICE, help=", ".join(VOICES) + ", or fish:<modelId>[:female|male]")
     ap.add_argument("--speed", type=float, default=1.0)
     ap.add_argument("--out-dir", default="voice")
+    ap.add_argument("--no-qa", action="store_true", help="skip the listen-back stutter check")
+    ap.add_argument("--tune-terms", help='JSON {"Term": ["spelling1", "spelling2"]} — print the best spelling per term and exit')
     a = ap.parse_args()
     import soundfile as sf
     sb = json.load(open(a.storyboard, encoding="utf-8"))
     base = os.path.dirname(os.path.abspath(a.storyboard))
     os.makedirs(os.path.join(base, a.out_dir), exist_ok=True)
-    v = Voice(a.voice, a.speed)
+    v = Voice(a.voice, a.speed, qa=not a.no_qa)
+    if a.tune_terms:
+        print(json.dumps(tune_terms(v, json.loads(a.tune_terms)), ensure_ascii=False)); return
     meta = sb.setdefault("meta", {})
     extra = meta.get("spoken", {})
     meta["gap"] = 0                      # pauses now live inside the audio
@@ -224,6 +299,9 @@ def main():
             c["duration"] = round(nxt - spans[i][0], 3)
         say[0]["audio"] = rel
         s["say"] = say
+    weak = [t for sc, t in v.qa_log if sc < 0.75]
+    if weak:
+        print("⚠ sentences that still sound off after retries (rephrase them):", *weak, sep="\n  ", file=sys.stderr)
     out = os.path.splitext(a.storyboard)[0] + ".voiced.json"
     json.dump(sb, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(f"voiced {len(sb['scenes'])} scenes with {a.voice} ({VOICES.get(a.voice, ('', '', ''))[2]}) -> {out}", file=sys.stderr)
