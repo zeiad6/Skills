@@ -5,12 +5,13 @@ description: Generate short vertical (9:16) animated tech-explainer videos — d
 
 # Tech Explainer Video (فيديوهات شرح تقنية قصيرة)
 
-Two workflows:
+Workflows:
 
 - **A. Generate** a new explainer video from a topic → `storyboard.json` → MP4.
-- **B. Translate** an existing video → transcript → translation → subtitles burned in (covering the old captions).
+- **B. Translate** an existing video → transcript → translation → subtitles burned in (covering the old captions),
+  optionally **dubbed** with an Arabic voice.
 
-Everything runs offline in the container: Chromium (Playwright) renders frames, ffmpeg encodes.
+Everything runs offline in the container: Chromium (Playwright) renders frames, ffmpeg encodes, sherpa-onnx does speech-to-text and text-to-speech.
 Bundled fonts: Cairo (Arabic + Latin) and JetBrains Mono, under OFL (`assets/fonts/OFL.txt`).
 
 ## Ground rules
@@ -68,15 +69,23 @@ Bundled fonts: Cairo (Arabic + Latin) and JetBrains Mono, under OFL (`assets/fon
    ```
    ≈ real time at 1080p with 3 workers. Send the result with SendUserFile.
 
-### Voiceover
+### Voiceover (offline Arabic TTS)
 
-There is no TTS in the default container (Hugging Face / Microsoft speech endpoints are blocked).
-- If the user supplies narration audio: set `"audio": "voice.mp3"`, run
+`scripts/tts.py` voices every `say` line with a Piper voice via sherpa-onnx (downloaded from GitHub
+releases on first use; default `vits-piper-ar_JO-kareem-medium`, male Arabic). Line durations are
+written back so scenes and captions follow the real speech:
+```bash
+python3 scripts/tts.py story.json --speed 1.15      # → story.voiced.json + voice/NNN.wav
+node scripts/render.mjs story.voiced.json out/video.mp4
+```
+- English tech terms are transliterated for speech only (`SPOKEN_AR` in `tts.py`; per-video
+  overrides via `meta.spoken: {"Helm": "هِلم"}`, or give a line an explicit `"speak"` text).
+  Add any new term the video uses — the Arabic voice mangles raw Latin words.
+- Other voices: any `vits-piper-*` name from the sherpa-onnx `tts-models` release (e.g. English
+  `vits-piper-en_US-ryan-medium`).
+- If the user supplies their own narration instead: set `"audio": "voice.mp3"`, run
   `python3 scripts/transcribe.py voice.mp3 segs.json --model small --lang ar`, and set caption
-  `start/end` from the segments (split long segments proportionally by text length). Scene
-  boundaries should follow the captions.
-- If a TTS tool/API is available in the session, generate the audio first, then do the same.
-- Otherwise deliver the silent video (captions carry the message) and say so; `"music": {"file": "...", "volume": 0.3}` adds a background track if the user provides one.
+  `start/end` from the segments. `"music": {"file": "...", "volume": 0.12}` adds a background track.
 
 ## B. Translate an existing video
 
@@ -98,6 +107,19 @@ There is no TTS in the default container (Hugging Face / Microsoft speech endpoi
    An `.srt` is written next to the MP4 for platforms that take soft subtitles.
 5. Spot-check 3–4 frames: Arabic must be joined (not isolated letters), punctuation on the left
    end, Latin terms in the right order.
+
+### Dubbing (Arabic voice instead of subtitles only)
+
+Arabic speech runs ~1.5–1.8× longer than English, so a word-for-word dub can't fit. Write a
+**condensed** spoken line per cue (~35% shorter, same meaning) as `"dub"`, and usually use it as
+the subtitle `text` too so viewers read what they hear. Then:
+```bash
+python3 scripts/dub_video.py input.mp4 cues.json out/input_dub.mp4 --cover 740,92
+```
+Each breath-group of the original is slowed just enough to fit its dubbed speech (factors are
+printed — aim for ≤ 1.15; above that, shorten lines). Subtitles are re-timed to the new voice.
+The original audio is dropped: in a mono mix speech and music can't be separated, so keeping it
+would leave the English voice audible under the Arabic.
 
 ## Troubleshooting
 

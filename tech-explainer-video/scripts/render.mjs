@@ -123,7 +123,16 @@ await browser.close();
 const list = path.join(tmp, 'list.txt');
 fs.writeFileSync(list, parts.filter(Boolean).map(f => `file '${f}'`).join('\n'));
 const ff = ['-f', 'concat', '-safe', '0', '-i', list];
-const audio = sb.audio ? path.resolve(sbDir, sb.audio) : null;
+let audio = sb.audio ? path.resolve(sbDir, sb.audio) : null;
+// per-line voice clips (from scripts/tts.py) are placed at their caption start times
+const clips = sb.captions.filter(c => c.audio);
+if (!audio && clips.length) {
+  audio = path.join(tmp, 'voice.wav');
+  const inputs = clips.flatMap(c => ['-i', path.resolve(sbDir, c.audio)]);
+  const graph = clips.map((c, i) => `[${i}:a]aresample=48000,adelay=${Math.round(c.start * 1000)}:all=1[a${i}]`).join(';')
+    + ';' + clips.map((_, i) => `[a${i}]`).join('') + `amix=inputs=${clips.length}:normalize=0,apad=whole_dur=${duration}[out]`;
+  await ffmpeg([...inputs, '-filter_complex', graph, '-map', '[out]', '-ac', '1', audio]).done;
+}
 const music = sb.music?.file ? path.resolve(sbDir, sb.music.file) : null;
 if (audio) ff.push('-ss', String(from), '-i', audio);
 if (music) ff.push('-stream_loop', '-1', '-ss', String(from), '-i', music);
