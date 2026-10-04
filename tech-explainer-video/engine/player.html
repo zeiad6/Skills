@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Explainer Player</title>
+<style>
+@font-face { font-family: Cairo; font-weight: 500; src: url(../assets/fonts/Cairo-500.ttf); }
+@font-face { font-family: Cairo; font-weight: 700; src: url(../assets/fonts/Cairo-700.ttf); }
+@font-face { font-family: Cairo; font-weight: 800; src: url(../assets/fonts/Cairo-800.ttf); }
+@font-face { font-family: JBMono; font-weight: 500; src: url(../assets/fonts/JetBrainsMono-500.ttf); }
+html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+</style>
+<link rel="stylesheet" href="engine.css">
+</head>
+<body>
+<div id="viewport"><div id="stage"></div></div>
+<script src="timeline.js"></script>
+<script src="mascot.js"></script>
+<script src="engine.js"></script>
+<script>
+  // Preview mode: player.html?sb=../examples/docker-ar.json&t=4.5
+  const q = new URLSearchParams(location.search);
+  if (q.get('sb')) {
+    fetch(q.get('sb')).then(r => r.json()).then(sb => {
+      window.__load(sb);
+      if (q.get('t')) { window.__seek(parseFloat(q.get('t'))); return; }
+      const t0 = performance.now();
+      const tick = () => { window.__seek((performance.now() - t0) / 1000 % window.__duration()); requestAnimationFrame(tick); };
+      tick();
+    });
+  }
+</script>
+</body>
+</html>

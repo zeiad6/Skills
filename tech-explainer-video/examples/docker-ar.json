@@ -1,0 +1,60 @@
+{
+  "meta": { "lang": "ar", "dir": "rtl", "fps": 30, "width": 1080, "handle": "@promptforge", "accent": "#4ade80" },
+  "audio": null,
+  "pipeline": {
+    "groups": [
+      { "label": "BUILD", "steps": ["CODE", "DOCKERFILE", "IMAGE"] },
+      { "label": "SHIP", "steps": ["REGISTRY", "PULL"] },
+      { "label": "RUN", "steps": ["CONTAINER", "SCALE"] }
+    ]
+  },
+  "scenes": [
+    { "start": 0, "end": 4, "type": "title", "eyebrow": "شرح في دقيقة", "title": "ما هو Docker؟", "subtitle": "ولماذا يحبه كل مهندس؟", "presenter": true, "wave": true, "top": 380, "box": { "x": 60, "y": 330, "w": 960, "h": 460 } },
+    { "start": 4, "end": 11, "type": "terminal", "presenter": true, "title": "deploy@server — bash",
+      "server": { "name": "prod-01", "sub": "ubuntu 24.04 · python 3.8", "live": true },
+      "lines": ["$ python app.py", "ModuleNotFoundError: No module named 'fastapi'", "$ pip install fastapi", "error: requires python >= 3.10", "✗ it works on my machine..."] },
+    { "start": 11, "end": 17, "type": "checklist", "presenter": true, "heading": "ماذا يحتاج تطبيقك ليعمل؟",
+      "pipeline": { "done": 0, "current": true },
+      "items": [
+        { "icon": "Py", "title": "إصدار اللغة", "sub": "Python 3.12" },
+        { "icon": "⬚", "title": "المكتبات", "sub": "fastapi · uvicorn" },
+        { "icon": "⚙", "title": "إعدادات النظام", "sub": "env · ports · files" },
+        { "icon": "✓", "title": "الكود نفسه", "sub": "app.py" }
+      ] },
+    { "start": 17, "end": 24, "type": "code", "eyebrow": "DOCKERFILE", "file": "Dockerfile",
+      "pipeline": { "done": 1, "current": true },
+      "code": "FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\nCOPY . .\nEXPOSE 8000\nCMD [\"uvicorn\", \"app:api\", \"--host\", \"0.0.0.0\"]",
+      "highlight": [1, 4], "highlightAt": 3.5 },
+    { "start": 24, "end": 32, "type": "flow", "eyebrow": "من الكود إلى الحاوية",
+      "pipeline": { "done": 4, "current": true },
+      "nodes": [
+        { "title": "docker build", "sub": "يبني صورة (Image) من الـ Dockerfile" },
+        { "title": "docker push", "sub": "يرفع الصورة إلى سجل مثل Docker Hub" },
+        { "title": "docker pull", "sub": "أي خادم يسحب نفس الصورة بالضبط" },
+        { "title": "docker run", "sub": "تشتغل الصورة كحاوية (Container) معزولة" }
+      ] },
+    { "start": 32, "end": 38, "type": "compare", "presenter": true,
+      "pipeline": { "done": 6 },
+      "cards": [
+        { "title": "Image", "text": "الوصفة: قالب ثابت للقراءة فقط", "color": "#60a5fa" },
+        { "title": "Container", "text": "الطبق: نسخة حيّة تعمل من الصورة", "color": "#4ade80" }
+      ] },
+    { "start": 38, "end": 44, "type": "bullets", "presenter": true, "heading": "تذكّرها هكذا:",
+      "pipeline": { "done": 6 },
+      "items": ["نفس البيئة في كل مكان", "تشغيل في ثوانٍ", "انتهى زمن: يعمل على جهازي فقط!"] }
+  ],
+  "captions": [
+    { "start": 0.3, "end": 3.9, "text": "ما هو Docker؟ ولماذا يحبه كل مهندس؟", "keywords": ["Docker؟"] },
+    { "start": 4.1, "end": 7.4, "text": "كتبت تطبيقًا يعمل على جهازك بشكل ممتاز…" },
+    { "start": 7.5, "end": 10.9, "text": "لكن على الخادم؟ أخطاء في كل مكان.", "keywords": ["أخطاء"] },
+    { "start": 11.1, "end": 14.0, "text": "لأن تطبيقك يحتاج بيئة كاملة ليعمل،" },
+    { "start": 14.1, "end": 16.9, "text": "إصدار اللغة، والمكتبات، والإعدادات." },
+    { "start": 17.1, "end": 20.4, "text": "مع Docker تكتب كل ذلك في ملف واحد:", "keywords": ["Docker"] },
+    { "start": 20.5, "end": 23.9, "text": "الـ Dockerfile، وصفة دقيقة لبيئتك.", "keywords": ["Dockerfile،"] },
+    { "start": 24.1, "end": 27.9, "text": "تبني منه صورة، وترفعها إلى السجل،", "keywords": ["صورة،"] },
+    { "start": 28.0, "end": 31.9, "text": "ثم أي خادم يسحبها ويشغّلها كحاوية.", "keywords": ["كحاوية."] },
+    { "start": 32.1, "end": 35.0, "text": "الصورة هي الوصفة الثابتة،", "keywords": ["الصورة"] },
+    { "start": 35.1, "end": 37.9, "text": "والحاوية هي النسخة الحيّة منها.", "keywords": ["والحاوية"] },
+    { "start": 38.1, "end": 43.8, "text": "نفس البيئة، في كل مكان، في ثوانٍ. هذا هو Docker.", "keywords": ["Docker."] }
+  ]
+}

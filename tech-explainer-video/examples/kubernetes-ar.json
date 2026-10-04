@@ -1,0 +1,51 @@
+{
+  "meta": { "lang": "ar", "fps": 30, "width": 1080, "handle": "@promptforge", "accent": "#4ade80" },
+  "pipeline": {
+    "groups": [
+      { "label": "DECLARE", "steps": ["IMAGE", "YAML", "APPLY"] },
+      { "label": "ORCHESTRATE", "steps": ["SCHEDULE", "SCALE", "HEAL", "SERVE"] }
+    ]
+  },
+  "scenes": [
+    { "type": "title", "presenter": true, "wave": true, "eyebrow": "شرح في دقيقة", "title": "ما هو Kubernetes؟", "subtitle": "قائد أوركسترا الحاويات", "box": { "x": 60, "y": 330, "w": 960, "h": 460 },
+      "say": [{ "text": "ما هو Kubernetes؟", "keywords": ["Kubernetes؟"] }, "ولماذا تستخدمه كل الشركات الكبرى؟"] },
+
+    { "type": "terminal", "presenter": true, "title": "ops@laptop — bash",
+      "server": { "name": "server-2", "sub": "10.0.0.12 · 03:14 AM", "live": false },
+      "lines": ["$ ssh server-2", "ssh: connect to host 10.0.0.12: Connection timed out", "$ docker ps", "error: 4 containers DOWN", "✗ users can't reach the app"],
+      "say": ["تطبيقك يعمل داخل حاويات Docker على عدة خوادم.", "وفي الثالثة فجرًا… يتعطّل أحد الخوادم.", "من سيعيد تشغيل الحاويات؟ ومن يوزّع الضغط؟"] },
+
+    { "type": "cluster", "eyebrow": "KUBERNETES CLUSTER", "pipeline": { "done": 0, "current": true },
+      "nodes": [{ "name": "node-1" }, { "name": "node-2" }, { "name": "node-3" }], "replicas": 3, "app": "web",
+      "say": [{ "text": "هنا يأتي Kubernetes، أو K8s اختصارًا.", "keywords": ["Kubernetes،", "K8s"] }, "يدير حاوياتك على مجموعة خوادم تسمى Cluster."] },
+
+    { "type": "code", "eyebrow": "أنت تصف… وهو ينفّذ", "file": "deployment.yaml", "pipeline": { "done": 2, "current": true },
+      "code": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  replicas: 3\n  template:\n    spec:\n      containers:\n        - name: web\n          image: shop/web:1.4",
+      "highlight": [6], "highlightAt": 4.2, "lps": 5,
+      "say": ["لا تعطيه أوامر خطوة بخطوة،", "بل تصف الحالة التي تريدها في ملف YAML:", { "text": "أريد ثلاث نسخ من تطبيقي، دائمًا.", "keywords": ["ثلاث"] }] },
+
+    { "type": "cluster", "eyebrow": "SCALING", "pipeline": { "done": 3, "current": true }, "instant": true,
+      "replicas": 3, "app": "web", "events": [{ "at": 2.6, "action": "scale", "replicas": 6 }],
+      "say": ["زاد عدد الزوار؟ غيّر رقمًا واحدًا إلى ستة،", "فيشغّل نسخًا جديدة ويوزّعها على الخوادم."] },
+
+    { "type": "cluster", "eyebrow": "SELF-HEALING", "pipeline": { "done": 4, "current": true }, "instant": true,
+      "replicas": 6, "app": "web", "events": [{ "at": 2.0, "action": "kill", "node": 1 }],
+      "say": [{ "text": "وإذا تعطّل خادم بالكامل؟", "keywords": ["تعطّل"] }, "يلاحظ ذلك فورًا، ويعيد تشغيل الحاويات", { "text": "على الخوادم السليمة. تلقائيًا.", "keywords": ["تلقائيًا."] }] },
+
+    { "type": "flow", "eyebrow": "أهم 4 مفاهيم", "pipeline": { "done": 6 }, "sync": "say", "syncOffset": 1,
+      "nodes": [
+        { "title": "Pod", "sub": "أصغر وحدة تشغيل: حاوية أو أكثر", "icon": "▣" },
+        { "title": "Deployment", "sub": "يحافظ على عدد النسخ ويحدّثها", "icon": "⟳" },
+        { "title": "Service", "sub": "عنوان ثابت يوزّع الطلبات", "icon": "⇄" },
+        { "title": "Node", "sub": "الخادم الذي تعمل عليه الـ Pods", "icon": "▤" }
+      ],
+      "say": ["أهم أربعة مفاهيم:", { "text": "الـ Pod: أصغر وحدة تشغيل،", "keywords": ["Pod:"] }, { "text": "الـ Deployment: يحافظ على عدد النسخ،", "keywords": ["Deployment:"] }, { "text": "الـ Service: عنوان ثابت يوزّع الطلبات،", "keywords": ["Service:"] }, { "text": "والـ Node: الخادم الذي تعمل عليه.", "keywords": ["Node:"] }] },
+
+    { "type": "compare", "presenter": true, "pipeline": { "done": 6 },
+      "cards": [
+        { "title": "Docker", "text": "يغلّف تطبيقك في حاوية", "color": "#60a5fa" },
+        { "title": "K8s", "text": "يدير آلاف الحاويات ويُبقيها حيّة", "color": "#4ade80" }
+      ], "sync": "say",
+      "say": [{ "text": "إذن: Docker يغلّف تطبيقك في حاوية،", "keywords": ["Docker"] }, { "text": "وKubernetes يدير آلاف الحاويات ويُبقيها حيّة.", "keywords": ["وKubernetes"] }] }
+  ]
+}

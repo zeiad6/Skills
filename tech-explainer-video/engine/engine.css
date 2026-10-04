@@ -1,0 +1,108 @@
+/* Design tokens — dark "engineering terminal" look. Base canvas is 1080x1920 (9:16). */
+:root {
+  --bg: #050607;
+  --panel: #0d1013;
+  --panel-2: #12161a;
+  --line: #1f252c;
+  --line-2: #2a323b;
+  --text: #f2f4f6;
+  --muted: #7d8794;
+  --dim: #4a535e;
+  --green: #4ade80;
+  --green-d: #16a34a;
+  --red: #f05252;
+  --blue: #60a5fa;
+  --amber: #fbbf24;
+  --accent: #4ade80;
+}
+#viewport { position: absolute; inset: 0; overflow: hidden; background: var(--bg); }
+#stage {
+  position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0;
+  font-family: Cairo, "DejaVu Sans", sans-serif; color: var(--text); overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 42%, rgba(74, 222, 128, .05), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,.035) 1.5px, transparent 0) 0 0 / 36px 36px,
+    var(--bg);
+}
+.abs { position: absolute; }
+.mono { font-family: JBMono, "DejaVu Sans Mono", monospace; direction: ltr; unicode-bidi: isolate; }
+
+/* ---------- pipeline bar ---------- */
+.pipe { left: 40px; right: 40px; top: 190px; height: 128px; border: 2px solid var(--line); border-radius: 22px; background: rgba(13,16,19,.9); }
+.pipe .grp { position: absolute; top: 14px; height: 22px; border: 2px solid var(--line-2); border-bottom: 0; border-radius: 4px 4px 0 0; }
+.pipe .grp b { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); background: var(--panel); padding: 0 12px; font: 700 26px Cairo; color: var(--muted); letter-spacing: 4px; }
+.pipe .seg { position: absolute; top: 56px; height: 4px; border-radius: 2px; background: var(--line-2); }
+.pipe .dot { position: absolute; top: 44px; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; border: 3px solid var(--dim); background: var(--bg); box-sizing: border-box; }
+.pipe .dot.done { border-color: var(--green); box-shadow: 0 0 14px rgba(74,222,128,.5); }
+.pipe .dot.done::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--green); }
+.pipe .dot.cur { border-color: #fff; box-shadow: 0 0 0 6px rgba(255,255,255,.12); }
+.pipe .dot.fail { border-color: var(--red); box-shadow: 0 0 14px rgba(240,82,82,.6); }
+.pipe .dot.fail::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--red); }
+.pipe .lbl { position: absolute; top: 84px; transform: translateX(-50%); font: 700 18px Cairo; color: var(--dim); letter-spacing: 1px; white-space: nowrap; }
+.pipe .lbl.on { color: var(--green); }
+.pipe .lbl.bad { color: var(--red); }
+
+/* ---------- generic panels ---------- */
+.card { background: var(--panel); border: 2px solid var(--line); border-radius: 26px; box-sizing: border-box; }
+.h-eyebrow { font: 700 24px Cairo; color: var(--muted); letter-spacing: 3px; }
+.h-big { font: 800 64px/1.15 Cairo; }
+.h-mid { font: 800 46px/1.2 Cairo; }
+.muted { color: var(--muted); }
+.green { color: var(--green); }
+.red { color: var(--red); }
+.blue { color: var(--blue); }
+
+/* terminal */
+.term .bar { height: 54px; border-bottom: 2px solid var(--line); display: flex; align-items: center; padding: 0 22px; gap: 10px; direction: ltr; }
+.term .bar i { width: 15px; height: 15px; border-radius: 50%; display: inline-block; }
+.term .bar span { flex: 1; text-align: center; font: 500 20px JBMono; color: var(--muted); }
+.term pre { margin: 0; padding: 22px 26px; font: 500 26px/1.65 JBMono; color: #cbd5e1; white-space: pre-wrap; direction: ltr; text-align: left; }
+.term .cursor { display: inline-block; width: 13px; height: 28px; background: var(--green); vertical-align: -5px; }
+
+/* checklist rows */
+.row { display: flex; align-items: center; gap: 22px; padding: 22px 26px; margin-bottom: 18px; }
+.row .ico { width: 44px; height: 44px; flex: none; border-radius: 12px; border: 2px solid var(--line-2); display: grid; place-items: center; font: 800 26px Cairo; }
+.row .ttl { font: 800 34px Cairo; }
+.row .sub { font: 500 22px Cairo; color: var(--muted); }
+.row .st { margin-inline-start: auto; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--amber); box-sizing: border-box; display: grid; place-items: center; font: 800 24px Cairo; }
+.row .st.ok { border-color: var(--green); background: rgba(74,222,128,.15); color: var(--green); }
+.row .st.bad { border-color: var(--red); background: rgba(240,82,82,.15); color: var(--red); }
+
+/* avatars */
+.av { width: 120px; height: 120px; border-radius: 50%; background: #1b2026; border: 3px solid #3a434e; display: grid; place-items: center; font: 800 48px Cairo; }
+.av-n { font: 500 24px Cairo; color: var(--muted); text-align: center; margin-top: 10px; }
+
+/* stat grid */
+.dots { display: grid; gap: 14px; }
+.dots i { width: 38px; height: 38px; border-radius: 50%; background: #6b7280; display: block; }
+.dots i.on { background: var(--blue); box-shadow: 0 0 12px rgba(96,165,250,.6); }
+.bar-track { height: 22px; border-radius: 11px; background: #6b7280; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--blue); }
+
+/* code */
+.code pre { margin: 0; padding: 26px; font: 500 25px/1.6 JBMono; direction: ltr; text-align: left; white-space: pre; }
+.code .ln { display: block; padding: 0 10px; border-radius: 6px; }
+.code .ln.hl { background: rgba(74,222,128,.13); color: #bbf7d0; }
+
+/* flow nodes */
+.node { display: flex; align-items: center; gap: 22px; }
+.node .c { width: 64px; height: 64px; border-radius: 50%; border: 4px solid var(--dim); box-sizing: border-box; display: grid; place-items: center; font: 800 28px Cairo; background: var(--bg); flex: none; }
+.node.done .c { border-color: var(--green); color: var(--green); box-shadow: 0 0 18px rgba(74,222,128,.45); }
+.node.cur .c { border-color: #fff; box-shadow: 0 0 0 10px rgba(255,255,255,.08), 0 0 26px rgba(255,255,255,.3); }
+.node .t { font: 800 36px Cairo; }
+.node .s { font: 500 23px Cairo; color: var(--muted); }
+
+/* compare cards */
+.cmp .big { font: 800 120px/1 Cairo; direction: ltr; }
+.cmp .q { font: 800 40px/1.25 Cairo; margin-top: 18px; }
+
+/* captions */
+.cap { left: 60px; right: 60px; top: 1430px; display: flex; justify-content: center; }
+.cap span.pill { background: rgba(21,23,26,.96); border-radius: 22px; padding: 10px 30px 16px; font: 800 56px/1.35 Cairo; text-align: center; max-width: 900px; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+.cap .w { color: #6b7280; }
+.cap .w.on { color: var(--text); }
+.cap .w.kw { color: var(--accent); }
+.cap .w.kw:not(.on) { color: #2f6b45; }
+
+/* brand / handle */
+.handle { left: 0; right: 0; top: 1790px; text-align: center; font: 700 26px Cairo; color: #3b434c; letter-spacing: 2px; direction: ltr; }
