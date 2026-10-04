@@ -1,6 +1,6 @@
 ---
 name: tech-explainer-video
-description: Generate short vertical (9:16) animated tech-explainer videos — dark "engineering terminal" style with a CI/CD-style progress pipeline, terminal/code/checklist/flow/stat scenes, an original robot presenter, and word-by-word captions — in Arabic (RTL) or any language, rendered to MP4 with Playwright + ffmpeg. Also translates existing videos (offline transcription → translation → RTL-safe burned subtitles). Use when the user asks for a Reel/Short/TikTok explaining a programming or DevOps concept, wants "a video like this one", or wants a video translated/subtitled into Arabic. Triggers: "اعمل فيديو يشرح", "فيديو مثل هذا", "ترجم الفيديو", explainer video, reel, shorts, subtitles, CI/CD video.
+description: Generate short vertical (9:16) animated tech-explainer videos — dark "engineering terminal" style with a CI/CD-style progress pipeline, terminal/code/checklist/flow/stat scenes, original presenters (Nova with a female voice, Forge with a male voice), offline neural Arabic voiceover with lip-sync, and word-by-word captions — rendered to MP4 with Playwright + ffmpeg. Also localizes ANY existing video from any language: auto language detection, transcription, translation, natural Arabic dubbing (female/male voice) and RTL-safe subtitles. Use when the user asks for a Reel/Short/TikTok explaining a programming or DevOps concept, wants "a video like this one", or wants a video translated/subtitled into Arabic. Triggers: "اعمل فيديو يشرح", "فيديو مثل هذا", "ترجم الفيديو", "دبلج", "دبلجة", "تعليق صوتي", explainer video, reel, shorts, subtitles, CI/CD video.
 ---
 
 # Tech Explainer Video (فيديوهات شرح تقنية قصيرة)
@@ -69,57 +69,61 @@ Bundled fonts: Cairo (Arabic + Latin) and JetBrains Mono, under OFL (`assets/fon
    ```
    ≈ real time at 1080p with 3 workers. Send the result with SendUserFile.
 
-### Voiceover (offline Arabic TTS)
+### Voiceover (offline neural voices, lip-synced)
 
-`scripts/tts.py` voices every `say` line with a Piper voice via sherpa-onnx (downloaded from GitHub
-releases on first use; default `vits-piper-ar_JO-kareem-medium`, male Arabic). Line durations are
-written back so scenes and captions follow the real speech:
 ```bash
-python3 scripts/tts.py story.json --speed 1.15      # → story.voiced.json + voice/NNN.wav
+python3 scripts/tts.py story.json --voice ar-female      # → story.voiced.json + voice/sceneNN.wav
 node scripts/render.mjs story.voiced.json out/video.mp4
 ```
+| voice | model | notes |
+|---|---|---|
+| `ar-female` (default) | Piper `ar_JO-SA_dii-high` | natural female, high quality — **CC BY-NC-SA 4.0: non-commercial only** |
+| `ar-male` | Piper `ar_JO-SA_miro_V2-high` | male, high quality — CC BY-NC-SA 4.0 |
+| `ar-male-classic` | Piper `ar_JO-kareem-medium` | male, more permissive licence, flatter |
+| `en-female` / `en-female-hq` / `en-male` | Piper `en_US-amy` / `en_US-lessac` / `en_US-ryan` | English |
+
+Tell the user about the non-commercial licence when they plan to monetise; offer `ar-male-classic`.
+How it stays smooth (don't undo this): caption fragments are joined into **sentences** before
+synthesis (a line ending in a comma continues into the next), Arabic is **auto-diacritized**
+(tashkeel) because these voices were trained on diacritized text, silence is trimmed with 12 ms
+fades, pauses are uniform (0.32 s between sentences), and the track is compressed and normalised to
+-16 LUFS. Each scene is one continuous clip; caption timings are derived from it.
+
+- `meta.presenter` is set automatically: **`nova`** (original female engineer robot: headset,
+  glowing visor, light-trail ponytail) for female voices, **`forge`** (hard-hat robot) for male.
+  Override with `"presenter": "forge"|"nova"`, colour via `meta.presenterAccent`.
+- The presenter's mouth follows the real voice loudness (render.mjs passes an envelope).
 - English tech terms are transliterated for speech only (`SPOKEN_AR` in `tts.py`; per-video
-  overrides via `meta.spoken: {"Helm": "هِلم"}`, or give a line an explicit `"speak"` text).
-  Add any new term the video uses — the Arabic voice mangles raw Latin words.
-- Other voices: any `vits-piper-*` name from the sherpa-onnx `tts-models` release (e.g. English
-  `vits-piper-en_US-ryan-medium`).
-- If the user supplies their own narration instead: set `"audio": "voice.mp3"`, run
-  `python3 scripts/transcribe.py voice.mp3 segs.json --model small --lang ar`, and set caption
-  `start/end` from the segments. `"music": {"file": "...", "volume": 0.12}` adds a background track.
+  `meta.spoken: {"Helm": "هِلم"}`, or `"speak"` on a line). Add every new Latin term the script uses.
+- Narration speed: `--speed 1.1` for snappier shorts. User-supplied narration instead: set
+  `"audio": "voice.mp3"` and time captions from `scripts/transcribe.py`.
 
-## B. Translate an existing video
+## B. Localize / dub ANY video (any source language)
 
-1. Transcribe (downloads Whisper from GitHub releases on first run, ~640 MB for `small.en`):
-   ```bash
-   python3 scripts/transcribe.py input.mp4 segs.json --model small.en     # English source
-   python3 scripts/transcribe.py input.mp4 segs.json --model small --lang es  # other languages
-   ```
-2. Fix obvious ASR mistakes using what's on screen (extract frames with
-   `ffmpeg -i input.mp4 -vf "fps=1/4,scale=200:-1,tile=8x4" -frames:v 1 sheet.jpg` and read it).
-3. Split each segment into caption cues of ≤ ~45 Arabic characters (≤ 2 lines), allocate time
-   proportionally to source-text length, and translate each cue. Save as
-   `[{"start","end","text","ar"}]`.
-4. Find where the source's burned-in captions sit (read a full-resolution frame), then:
-   ```bash
-   python3 scripts/burn_subs.py input.mp4 cues.json out/input_ar.mp4 --cover 740,92
-   ```
-   `--cover Y,H` paints an opaque band over the old captions (omit it if the video has none).
-   An `.srt` is written next to the MP4 for platforms that take soft subtitles.
-5. Spot-check 3–4 frames: Arabic must be joined (not isolated letters), punctuation on the left
-   end, Latin terms in the right order.
-
-### Dubbing (Arabic voice instead of subtitles only)
-
-Arabic speech runs ~1.5–1.8× longer than English, so a word-for-word dub can't fit. Write a
-**condensed** spoken line per cue (~35% shorter, same meaning) as `"dub"`, and usually use it as
-the subtitle `text` too so viewers read what they hear. Then:
 ```bash
-python3 scripts/dub_video.py input.mp4 cues.json out/input_dub.mp4 --cover 740,92
+python3 scripts/localize.py prepare input.mp4 work/            # detect language, transcribe, find caption band
+#   → work/job.json (cues with "src", empty "text"/"dub"), work/sheet.jpg, work/band.jpg
+#   YOU (Claude) now translate: fill "text" and "dub" for every cue in work/job.json
+python3 scripts/localize.py finish work/ out/input_ar.mp4 --speed 1.15   # dub + subtitles
+python3 scripts/localize.py finish work/ out/input_ar_subs.mp4 --mode subs # subtitles only, original audio
 ```
-Each breath-group of the original is slowed just enough to fit its dubbed speech (factors are
-printed — aim for ≤ 1.15; above that, shorten lines). Subtitles are re-timed to the new voice.
-The original audio is dropped: in a mono mix speech and music can't be separated, so keeping it
-would leave the English voice audible under the Arabic.
+Translating well is the part that makes this smart — do it yourself, carefully:
+1. Read `work/sheet.jpg` (and frames at specific times if needed) to understand the visuals and
+   fix ASR mistakes using on-screen text (e.g. "linner" → linter).
+2. `text` = the subtitle, `dub` = what is spoken. For Arabic dubbing write `dub` **condensed**
+   (~35–40% shorter than a literal translation, same meaning) and set `text` = `dub` so viewers read
+   what they hear. Keep tech terms in English.
+3. Cues inside one speech segment are one breath group: keep the sentence flowing across them
+   (end mid-sentence cues with "،"), so the voice is synthesized as one continuous sentence.
+4. Open `work/band.jpg`: the red box must cover the original burned-in captions. Adjust `"cover"`
+   `[y, height]` in job.json if needed, or set it to `null` when there are none.
+5. `finish` prints per-section stretch factors. If any is > 1.2, shorten those `dub` lines and run
+   `finish` again — aim for the dubbed video to be within ~5% of the original length.
+
+Notes: the source audio is replaced (speech and music can't be separated in a mixed track; keeping
+it leaves the original voice audible). `--voice ar-male` for a male dub. The presenter in someone
+else's video can't be swapped — only generated videos use Nova/Forge. `transcribe.py` and
+`burn_subs.py` remain available as standalone steps.
 
 ## Troubleshooting
 

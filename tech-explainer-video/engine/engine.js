@@ -299,9 +299,11 @@
       const prevSame = prev && !!prev.presenter, nextSame = next && !!next.presenter;
       const pin = prevSame ? 1 : ease(lt / 0.5), pout = nextSame || !next ? 1 : 1 - ease((lt - (dur - 0.3)) / 0.3);
       const k = pin * pout, dx = (1 - k) * (side === 'left' ? -120 : 120);
-      const talking = (SB.captions || []).some(c => t >= c.start && t < c.end - 0.1);
+      // lip-sync: voice envelope (set by render.mjs) when present, else animate while a caption is up
+      const env = window.__ENVELOPE;
+      const talking = env ? (env[Math.floor(t * env.fps)] || 0) : (SB.captions || []).some(c => t >= c.start && t < c.end - 0.1);
       const x = side === 'left' ? 20 : W - 320;
-      h += `<div class="abs" style="left:${x}px;top:${(s.presenterTop || 820)}px;opacity:${k.toFixed(3)};transform:translateX(${dx.toFixed(1)}px)">${mascotSVG(t, talking, { accent: SB.meta?.accent, wave: s.wave && lt < 1.6 })}</div>`;
+      h += `<div class="abs" style="left:${x}px;top:${(s.presenterTop || 820)}px;opacity:${k.toFixed(3)};transform:translateX(${dx.toFixed(1)}px)">${presenterSVG(SB.meta?.presenter || 'forge', t, talking, { accent: SB.meta?.presenterAccent, wave: s.wave && lt < 1.6 })}</div>`;
     }
     h += captionHTML(t);
     if (SB.meta?.handle) h += `<div class="abs handle">${esc(SB.meta.handle)}</div>`;
@@ -324,6 +326,7 @@
     return document.fonts.ready.then(() => true);
   };
   window.__seek = t => render(t);
+  window.__setEnvelope = (arr, fps) => { window.__ENVELOPE = arr; if (arr) arr.fps = fps; };
   window.__duration = () => SB.duration || Math.max(SB.scenes.at(-1).end, ...(SB.captions || []).map(c => c.end));
   window.__SCENE_TYPES = Object.keys(SCENES);
   window.__warnings = () => window.Timeline ? Timeline.validate(SB, Object.keys(SCENES)) : [];

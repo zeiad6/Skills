@@ -4,7 +4,7 @@ Claude skills by @zeiad6. Each folder is a self-contained skill (`SKILL.md` + sc
 
 | skill | what it does |
 |---|---|
-| [`tech-explainer-video`](tech-explainer-video/SKILL.md) | Generates vertical (9:16) animated tech-explainer videos in Arabic (RTL) or any language from a storyboard JSON — terminal/code/flow/cluster scenes, original robot presenter, word-by-word captions — translates existing videos with RTL-safe burned subtitles, and adds offline Arabic voiceover or dubbing. |
+| [`tech-explainer-video`](tech-explainer-video/SKILL.md) | Generates vertical (9:16) animated tech-explainer videos in Arabic (RTL) or any language from a storyboard JSON — terminal/code/flow/cluster scenes, original robot presenter, word-by-word captions — translates existing videos with RTL-safe burned subtitles, and localizes any video with natural Arabic dubbing (female or male voice). |
 
 ## Install
 
@@ -23,4 +23,4 @@ cp -r Skills/tech-explainer-video ~/.claude/skills/
 ## Showcase
 
 - [`showcase/kubernetes-ar.mp4`](showcase/kubernetes-ar.mp4) — "ما هو Kubernetes؟", 76 s, generated end-to-end from
-  [`examples/kubernetes-ar.json`](tech-explainer-video/examples/kubernetes-ar.json) with offline Arabic voiceover.
+  [`examples/kubernetes-ar.json`](tech-explainer-video/examples/kubernetes-ar.json) with offline Arabic voiceover (female voice, Nova presenter).
