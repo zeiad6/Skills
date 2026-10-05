@@ -158,3 +158,13 @@ else's video can't be swapped — only generated videos use Nova/Forge. `transcr
   Never run `playwright install` in the cloud container.
 - **Text overflows a card** → shorten copy first; otherwise set a custom `box` on the scene.
 - **Presenter covers content** → `presenter: false`, or `"presenter": "left"` / `"right"`.
+
+## Where deliverables go (user preference)
+
+- Anything not meant to be public — third-party videos, translated/dubbed copies of other people's
+  content, personal outputs — goes to the **private** repo `zeiad6/zidex`, branch **`videos`**
+  (an orphan branch holding only media; one folder per video, update its README table).
+  Push it without cloning the code: `git init -b videos` in a temp dir, add files,
+  `git fetch origin videos && git reset --soft origin/videos` (if the branch exists), commit, push.
+- Never put such files in public repos (`zeiad6/Skills`, `zeiad6/PromptForge`). Only original,
+  shareable demos belong in `Skills/showcase/`.

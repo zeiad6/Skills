@@ -68,3 +68,13 @@ Options: `prepare --to en|fr|…` (target language, default `ar`), `--lang en` (
 
 Need dubbing, voiceover or generated explainer videos instead? That's the `tech-explainer-video`
 skill — only use it when the user explicitly asks for a voice.
+
+## Where deliverables go (user preference)
+
+- Anything not meant to be public — third-party videos, translated/dubbed copies of other people's
+  content, personal outputs — goes to the **private** repo `zeiad6/zidex`, branch **`videos`**
+  (an orphan branch holding only media; one folder per video, update its README table).
+  Push it without cloning the code: `git init -b videos` in a temp dir, add files,
+  `git fetch origin videos && git reset --soft origin/videos` (if the branch exists), commit, push.
+- Never put such files in public repos (`zeiad6/Skills`, `zeiad6/PromptForge`). Only original,
+  shareable demos belong in `Skills/showcase/`.
